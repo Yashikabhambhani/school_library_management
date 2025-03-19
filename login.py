@@ -6,14 +6,14 @@ import subprocess
 login = tk.Tk()
 style = ttk.Style(login)
 
-login.configure(bg="#202020")
+login.configure(bg="#303030")
 style.configure(
     'TLabel',
     background="#202020",
-    foreground="#fafafa",
+    foreground="#ffffff",
 )
 
-login.title("Login")
+login.title("LibraEase - Smart Library Login")
 
 window_width = 700
 window_height = 800
@@ -37,8 +37,8 @@ login_pic = tk.PhotoImage(file="achetz\login_icon.png")
 
 heading = ttk.Label(
     login,
-    font=('Poiret One', 40),
-    text="Login to Enlightenment",
+    font=('Roboto', 40),
+    text="Login to Libraease",
     image=login_pic,
     compound='top'
 )
