@@ -2,7 +2,13 @@ import tkinter as tk
 from tkinter import ttk
 import mysql.connector
 import subprocess
+from dotenv import load_dotenv
+import os
 
+# Load environment variables
+load_dotenv()
+
+# Initialize login window
 login = tk.Tk()
 style = ttk.Style(login)
 
@@ -15,106 +21,41 @@ style.configure(
 
 login.title("LibraEase - Smart Library Login")
 
+# Center window on screen
 window_width = 700
 window_height = 800
 screen_width = login.winfo_screenwidth()
 screen_height = login.winfo_screenheight()
-center_x = int(screen_width/2 - window_width / 2)
-center_y = int(screen_height/2 - window_height / 2)
+center_x = int(screen_width / 2 - window_width / 2)
+center_y = int(screen_height / 2 - window_height / 2)
 
-login.geometry(
-    f'{window_width}x{window_height}+{center_x}+{center_y}'
-)
+login.geometry(f'{window_width}x{window_height}+{center_x}+{center_y}')
 
-sqlName = tk.StringVar()
-sqlPass = tk.StringVar()
-sqlDb = tk.StringVar()
+# User input variable
 username = tk.StringVar()
 
+# Login screen image
+login_pic = tk.PhotoImage(file="achetz/login_icon.png")
 
-login_pic = tk.PhotoImage(file="achetz\login_icon.png")
-
-
+# Heading text
 heading = ttk.Label(
     login,
     font=('Roboto', 40),
-    text="Login to Libraease",
+    text="Welcome to LibraEase 📚",
     image=login_pic,
     compound='top'
 )
 
-heading.pack(
-    pady=50
-)
+heading.pack(pady=50)
 
-nameText = ttk.Label(
-    login,
-    font=('Lato', 15),
-    text='mySQL username: ',
-)
-
-nameText.pack(
-    padx=50,
-    anchor=tk.W,
-)
-
-nameEntry = tk.Entry(
-    login,
-    textvariable=sqlName,
-    font=('Manrope', 14),
-    background="#303030",
-    foreground="#fafafa",
-    borderwidth=0,
-)
-
-nameEntry.focus()
-nameEntry.pack(
-    padx=100,
-    pady=10,
-    fill=tk.X
-)
-
-ttk.Label(login).pack(pady=10)
-
-passText = ttk.Label(
-    login,
-    font=('Lato', 15),
-    text='mySQL password: ',
-)
-
-passText.pack(
-    padx=50,
-    anchor=tk.W,
-)
-
-passEntry = tk.Entry(
-    login,
-    textvariable=sqlPass,
-    font=('Manrope', 14),
-    background="#303030",
-    foreground="#fafafa",
-    borderwidth=0,
-    show="•",
-)
-
-passEntry.pack(
-    padx=100,
-    pady=10,
-    fill=tk.X
-)
-
-ttk.Label(login).pack(pady=10)
-
+# Username input field
 userText = ttk.Label(
     login,
     font=('Lato', 15),
-    text='What should we call you? ',
+    text='Enter your username: '
 )
 
-userText.pack(
-    padx=50,
-    anchor=tk.W,
-)
+userText.pack(padx=50, anchor=tk.W)
 
 userEntry = tk.Entry(
     login,
@@ -122,37 +63,25 @@ userEntry = tk.Entry(
     font=('Manrope', 14),
     background="#303030",
     foreground="#fafafa",
-    borderwidth=0,
+    borderwidth=0
 )
 
-userEntry.pack(
-    padx=100,
-    pady=10,
-    fill=tk.X
-)
+userEntry.pack(padx=100, pady=10, fill=tk.X)
 
-
+# Function to handle sign-in
 def signIn():
     try:
         sqldatabase = mysql.connector.connect(
-            host="localhost",
-            user=sqlName.get(),
-            password=sqlPass.get()
+            host=os.getenv("DB_HOST"),
+            user=os.getenv("DB_USER"),
+            password=os.getenv("DB_PASSWORD")
         )
-        with open("credentials.txt", "w") as file:
-            file.write(
-                str(sqlName.get() + " -|- " +
-                    sqlPass.get() + " -|- " +
-                    username.get())
-            )
         login.quit()
-        subprocess.call('python home.py')
+        subprocess.call(['python', 'home.py'])
     except:
-        subprocess.call('python popups/connect_error.py')
-        sqlName.set("")
-        sqlPass.set("")
+        subprocess.call(['python', 'popups/connect_error.py'])
 
-
+# Login button
 submit = tk.Button(
     login,
     text="Log in",
@@ -168,8 +97,7 @@ submit = tk.Button(
     activeforeground="#eaeaea"
 )
 
-submit.pack(
-    pady=10
-)
+submit.pack(pady=10)
 
+# Run the login window
 login.mainloop()
