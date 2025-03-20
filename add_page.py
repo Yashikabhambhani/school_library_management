@@ -1,185 +1,89 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 import mysql.connector
-import subprocess
+from dotenv import load_dotenv
+import os
 
-details = {}
-with open("credentials.txt") as file:
-    lis = file.read().split(" -|- ")
-    details['username'] = lis[0]
-    details['password'] = lis[1]
-    details['nickname'] = lis[2]
+# Load environment variables
+load_dotenv()
 
+# Retrieve MySQL credentials from .env file
+db_host = os.getenv("DB_HOST")
+db_user = os.getenv("DB_USER")
+db_password = os.getenv("DB_PASSWORD")
+db_name = os.getenv("DB_NAME")  # Now uses a dynamic database name
 
-sqldatabase = mysql.connector.connect(
-    host="localhost",
-    user=details['username'],
-    password=details['password'],
-    database="lib"
-)
-sqlcursor = sqldatabase.cursor()
-add = tk.Tk()
-style = ttk.Style(add)
+# Initialize Add Book Window
+add_page = tk.Tk()
+add_page.title("LibraEase - Add New Book")
+add_page.configure(bg="#303030")
 
-add.configure(bg="#202020")
-style.configure(
-    'TLabel',
-    background="#202020",
-    foreground="#fafafa",
-)
+# Set window size and position
+window_width = 600
+window_height = 400
+screen_width = add_page.winfo_screenwidth()
+screen_height = add_page.winfo_screenheight()
+center_x = int(screen_width / 2 - window_width / 2)
+center_y = int(screen_height / 2 - window_height / 2)
 
-add.title("Add Books")
+add_page.geometry(f'{window_width}x{window_height}+{center_x}+{center_y}')
 
-window_width = 1000
-window_height = 800
-screen_width = add.winfo_screenwidth()
-screen_height = add.winfo_screenheight()
-center_x = int(screen_width/2 - window_width / 2)
-center_y = int(screen_height/2 - window_height / 2)
-
-add.geometry(
-    f'{window_width}x{window_height}+{center_x}+{center_y}'
-)
-
-
-add_pic = tk.PhotoImage(file=r"achetz\add_book.png")
-
+# Heading Label
 heading = ttk.Label(
-    add,
-    font=('Poiret One', 40),
-    text="Add Books to Enlightenment",
-    image=add_pic,
-    compound='top',
-)
-
-heading.pack(
-    pady=30
-)
-
-sqlcursor.execute("select * from all_books order by id")
-
-books = []
-for i in sqlcursor:
-    books += [i]
-latest = books[-1][0]
-
-bookName = tk.StringVar()
-authorName = tk.StringVar()
-
-ttk.Label(add).pack(pady=20)
-
-nameText = ttk.Label(
-    add,
-    text='Name of book: ',
-    font=('Lato', 15),
-)
-
-nameText.pack(
-    padx=100,
-    pady=10,
-    anchor=tk.W
-)
-
-nameEntry = tk.Entry(
-    add,
-    textvariable=bookName,
-    font=('Manrope', 14),
+    add_page,
+    font=('Roboto', 25),
+    text="Add a New Book",
     background="#303030",
-    foreground="#fafafa",
-    borderwidth=0,
+    foreground="#ffffff"
 )
+heading.pack(pady=20)
 
-nameEntry.focus()
-nameEntry.pack(
-    padx=100,
-    fill=tk.X
-)
+# Book Information Input Fields
+title_var = tk.StringVar()
+author_var = tk.StringVar()
 
-ttk.Label(add).pack(pady=10)
+title_label = ttk.Label(add_page, text="Book Title:", background="#303030", foreground="white")
+title_label.pack(pady=5)
+title_entry = ttk.Entry(add_page, textvariable=title_var, width=40)
+title_entry.pack(pady=5)
 
-authorText = ttk.Label(
-    add,
-    text='Name of author: ',
-    font=('Lato', 15),
-)
+author_label = ttk.Label(add_page, text="Author Name:", background="#303030", foreground="white")
+author_label.pack(pady=5)
+author_entry = ttk.Entry(add_page, textvariable=author_var, width=40)
+author_entry.pack(pady=5)
 
-authorText.pack(
-    padx=100,
-    pady=10,
-    anchor=tk.W
-)
+# Function to Add Book to Database
+def add_book():
+    title = title_var.get().strip()
+    author = author_var.get().strip()
 
-authorEntry = tk.Entry(
-    add,
-    textvariable=authorName,
-    font=('Manrope', 14),
-    background="#303030",
-    foreground="#fafafa",
-    borderwidth=0,
-)
+    if not title or not author:
+        messagebox.showwarning("Warning", "Please fill in all fields.")
+        return
 
-authorEntry.pack(
-    padx=100,
-    fill=tk.X
-)
-
-
-def confirmAdd():
-    global latest
-
-    sqlcursor.execute("select * from all_books order by id")
-    booknames = []
-    for i in sqlcursor:
-        booknames += [i[1]]
-
-    if authorName.get() == "" or bookName.get() == "":
-        subprocess.call('python popups/blank_error.py')
-        bookName.set("")
-        authorName.set("")
-
-    elif bookName.get() in booknames:
-        subprocess.call('python popups/exists_error.py')
-        bookName.set("")
-        authorName.set("")
-
-    else:
-        subprocess.call('python popups/added_info.py')
-
-        sqlcursor.execute(
-            f"insert into all_books values ({latest + 1}, '{bookName.get()}', '{authorName.get()}')"
+    try:
+        connection = mysql.connector.connect(
+            host=db_host,
+            user=db_user,
+            password=db_password,
+            database=db_name  # Now dynamic
         )
-        sqldatabase.commit()
+        cursor = connection.cursor()
+        cursor.execute("INSERT INTO books (title, author) VALUES (%s, %s)", (title, author))
+        connection.commit()
 
-        sqlcursor.execute(
-            f"insert into available_books values ({latest + 1}, '{bookName.get()}', '{authorName.get()}')"
-        )
-        sqldatabase.commit()
+        messagebox.showinfo("Success", "Book added successfully!")
+        title_var.set("")
+        author_var.set("")
 
-        latest = books[-1][0]
-        bookName.set("")
-        authorName.set("")
+        cursor.close()
+        connection.close()
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to add book: {str(e)}")
 
+# Add Book Button
+add_button = ttk.Button(add_page, text="Add Book", command=add_book)
+add_button.pack(pady=20)
 
-
-
-
-submit = tk.Button(
-    add,
-    text="Add Book",
-    font=('Manrope Bold', 15),
-    background="#303030",
-    foreground="#eaeaea",
-    command=confirmAdd,
-    cursor='dot',
-    height=2,
-    width=10,
-    borderwidth=0,
-    activebackground="#404040",
-    activeforeground="#eaeaea"
-)
-
-submit.pack(
-    pady=50
-)
-
-add.mainloop()
+# Run the Tkinter window
+add_page.mainloop()
